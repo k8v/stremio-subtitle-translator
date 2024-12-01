@@ -1,0 +1,26 @@
+{
+    "id": "org.autotranslate.geanpn",
+    "version": "1.0.2",
+    "name": "Auto Subtitle Translate (Google)",
+    "logo": "./subtitles/logo.png",
+    "configurable": true,
+    "behaviorHints": {
+      "configurable": true,
+      "configurationRequired": true
+    },
+    "config": [
+      {
+        "key": "translateto",
+        "title": "Translate to",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Portuguese (Brazil)"
+        ]
+      }
+    ],
+    "description": "This addon translates subtitles using Google Translate API",
+    "types": ["series", "movie"],
+    "catalogs": [],
+    "resources": ["subtitles"]
+}

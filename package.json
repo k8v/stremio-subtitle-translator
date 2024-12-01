@@ -1,0 +1,17 @@
+{
+  "dependencies": {
+    "@google-cloud/translate": "^8.5.0",
+    "@iamtraction/google-translate": "github:iamtraction/google-translate",
+    "axios": "^1.6.1",
+    "better-queue": "^3.8.12",
+    "dotenv": "^16.3.1",
+    "google-translate-api-browser": "^5.0.0",
+    "mysql2": "^3.11.4",
+    "openai": "^4.73.1",
+    "pako": "^2.1.0",
+    "stremio-addon-sdk": "^1.6.10",
+    "util": "^0.12.5",
+    "uuid": "^9.0.1",
+    "ytssubs": "^1.0.2"
+  }
+}
