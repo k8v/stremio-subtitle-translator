@@ -1,28 +1,120 @@
-# Addon Link
-https://stremioaddon.sonsuzanime.com
+# Auto Subtitle Translate Add-on for Stremio
 
-# Auto-Subtitle-Translate-by-Sonsuz-Anime
-This is an auto subtitle translate addon for Stremio application using RapidAPI Microsoft Translator API.
+A Stremio add-on that automatically translates subtitles from OpenSubtitles into your desired language using various translation providers.
 
-# How the addon works ?
-It searchs OpensubtitlesV3 addon for your language.If desired language subtitle exists it returns a sub exists subfile.
-If there is no subs for desired language it looks up my database to see if that language exists in my database.If it exists in my database it gives you that translated subfile.
-If it doesn't exists it starts to translate 1 subfile with your api key then store it in my server.If you are the first one to translate that subfile you will be given 2 sub choice;
-1: Information sub file which is this;
-Your subtitle is now being translated. It will take about 30 seconds.
-After about 30 seconds, if you select the subtitle, it will appear.
-2: After you waited about 30 seconds if you choose this sub it will be your translated sub.
 
-# How to get RapidAPI-Key ?
-https://stremioaddon.sonsuzanime.com/subtitles/how-to-get-api-key.pdf
+## Features
 
-# Usage
-You have to configure addon to use. After you get your RapidAPI-Key paste it in configuration page then select your desired language.
+- Fetches subtitles from OpenSubtitlesV3
+- Supports multiple translation providers:
+  - Google Translate (free)
+  - DeepL
+  - ChatGPT
+- Configurable target language
+- Queue system for handling translation requests
+- Caches translated subtitles for better performance
 
-# Errors
+## How it Works
 
-## Apikey error.Make sure that you are subscribed to the API.And make sure that you havent exceeded your monthly quota.
-This means that your apikey is wrong or your 500.000 CHARACTER quota exceeded.
+The add-on follows this workflow:
 
-## No subtitles were found or the original subtitles are available in the OpenSubtitlesV3 addon.
-This means that no subtitles found in my database or no subtitles were found on OpenSubtitlesV3 addon.
+1. Receives subtitle request from Stremio
+2. Checks if translated subtitle already exists in database
+3. If not found, fetches subtitle from OpenSubtitles
+4. Queues the subtitle for translation
+5. Returns a placeholder message while translation is processing
+6. Saves translated subtitle once complete
+
+## Configuration
+
+The add-on can be configured through Stremio with these options:
+
+- Provider: Choose between Google Translate (free), DeepL, or ChatGPT
+- API Key: Required for DeepL integration
+- Target Language: Select your desired translation language
+
+## Technical Details
+
+- Built with Node.js
+- Uses `stremio-addon-sdk` for Stremio integration
+- Implements queue system using `better-queue`
+- Stores subtitles in local filesystem
+- Environment variables for configuration
+
+## Installation
+
+1. Web Installation (Recommended)
+   - Open Stremio
+   - Go to: in construction
+   - Click "Install Add-on"
+   - Select your preferred translation settings
+   - Click "Install"
+   - The add-on will be automatically configured in your Stremio
+
+2. Manual Installation
+   - Open Stremio
+   - Go to Add-ons
+   - Click the "Community Add-ons" tab
+   - Paste this URL: in construction
+   - Click "Install"
+
+3. Self-Hosting
+   ```bash
+   # Clone the repository
+   git clone https://github.com/HimAndRobot/stremio-translate-subtitle-by-geanpn.git
+   cd stremio-auto-translate
+
+   # Install dependencies
+   npm install
+
+   # Create .env file with required settings
+   PORT=3000
+   ADDRESS=0.0.0.0
+   BASE_URL=http://localhost:3000
+
+   # Start the add-on
+   npm start
+   ```
+   Then add `http://localhost:3000/manifest.json` to Stremio
+
+
+The add-on will be available at `http://localhost:3000`
+
+## Environment Variables
+
+- `PORT`: Server port (default: 3000)
+- `ADDRESS`: Server address (default: 0.0.0.0)
+- `BASE_URL`: Base URL for subtitle files
+
+## Technical Details
+
+### Queue System
+The add-on uses a queue system to handle translation requests efficiently:
+- Implements `better-queue` for managing translation tasks
+- Concurrent processing of subtitles
+- Automatic retries on failure
+- Progress tracking and status updates
+
+### Storage
+- Subtitles are stored in the local filesystem
+- Organized by provider, language, and media ID
+- Cached translations for improved performance
+
+### Translation Process
+1. Subtitle files are parsed and split into chunks
+2. Each chunk is translated using the selected provider
+3. Translated chunks are reassembled maintaining timing
+4. Final subtitle file is saved in SRT format
+
+## Contributing
+
+Bug reports and pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+## Support
+
+For bug reports: geanpn@gmail.com
+For donations:
+
+## License
+
+[MIT](https://choosealicense.com/licenses/mit/)
