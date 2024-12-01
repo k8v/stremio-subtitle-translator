@@ -7,12 +7,23 @@ A Stremio add-on that automatically translates subtitles from OpenSubtitles into
 
 - Fetches subtitles from OpenSubtitlesV3
 - Supports multiple translation providers:
-  - Google Translate (free)
-  - DeepL
+  - Google Translate
+    - Free API
+    - Web Scraping Method
+  - DeepL API
   - ChatGPT
+  - Google Gemini
+  - DeepGram
+  - RapidAPI Services
+    - Microsoft Translator
+    - MyMemory
+    - LingVanex
 - Configurable target language
 - Queue system for handling translation requests
 - Caches translated subtitles for better performance
+- Automatic provider fallback
+- Rate limiting protection
+- Provider rotation for optimal performance
 
 ## How it Works
 
@@ -118,3 +129,32 @@ For donations:
 ## License
 
 [MIT](https://choosealicense.com/licenses/mit/)
+
+## Credits
+
+This project is based on [Auto-Subtitle-Translate-by-Sonsuz-Anime](https://github.com/sonsuzanime/Auto-Subtitle-Translate-by-Sonsuz-Anime) by @sonsuzanime. The original project was enhanced with:
+
+### Additional Translation Providers:
+- Google Translate (Free)
+  - API Integration
+  - Web Scraping Method
+- DeepL API
+- ChatGPT
+- Google Gemini
+- DeepGram
+- RapidAPI Providers
+  - Microsoft Translator
+  - MyMemory
+  - LingVanex
+
+### Improvements:
+- Code optimizations
+- Queue system for handling multiple translation requests
+- Improved error handling
+- Better caching system
+- Provider fallback system
+- Rate limiting protection
+- Automatic provider rotation
+- Chunk optimization for large subtitles
+
+Special thanks to @sonsuzanime for the original implementation that made this project possible.
