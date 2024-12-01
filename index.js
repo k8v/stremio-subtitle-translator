@@ -54,7 +54,7 @@ const builder = new addonBuilder({
     }
   ],
   description:
-    "This addon takes subtitles from OpenSubtitlesV3 then translates into desired language using Google Translate, Deepl or ChatGPT. For donations: https://www.buymeacoffee.com/sonsuzosman Bug report: geanpn@gmail.com",
+    "This addon takes subtitles from OpenSubtitlesV3 then translates into desired language using Google Translate, Deepl or ChatGPT. For donations:in progress Bug report: geanpn@gmail.com",
   types: ["series", "movie"],
   catalogs: [],
   resources: ["subtitles"],
@@ -190,7 +190,7 @@ function parseId(id) {
   return { type: "unknown", season: 0, episode: 0 };
 }
 
-//publishToCentral("https://stremioaddon.sonsuzanime.com/manifest.json");
+publishToCentral(`http://${process.env.ADDRESS}/manifest.json`);
 
 const port = process.env.PORT || 3000;
 const address = process.env.ADDRESS || "0.0.0.0";

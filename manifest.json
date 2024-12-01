@@ -1,7 +1,7 @@
 {
     "id": "org.autotranslate.geanpn",
     "version": "1.0.2",
-    "name": "Auto Subtitle Translate (Google)",
+    "name": "Auto Subtitle Translate by geanpn",
     "logo": "./subtitles/logo.png",
     "configurable": true,
     "behaviorHints": {
@@ -10,16 +10,33 @@
     },
     "config": [
       {
+        "key": "provider",
+        "title": "Provider",
+        "type": "select",
+        "required": true,
+        "options": ["google(free)", "deepl", "chatgpt"]
+      },
+      {
+        "key": "apikey",
+        "title": "API Key",
+        "type": "text",
+        "required": false,
+        "dependencies": [
+          {
+            "key": "provider",
+            "value": ["deepl"]
+          }
+        ]
+      },
+      {
         "key": "translateto",
         "title": "Translate to",
         "type": "select",
         "required": true,
-        "options": [
-          "Portuguese (Brazil)"
-        ]
+        "options": ["Portuguese (Brazil)"]
       }
     ],
-    "description": "This addon translates subtitles using Google Translate API",
+    "description": "This addon takes subtitles from OpenSubtitlesV3 then translates into desired language using Google Translate, Deepl or ChatGPT. For donations:in progress Bug report: geanpn@gmail.com",
     "types": ["series", "movie"],
     "catalogs": [],
     "resources": ["subtitles"]
