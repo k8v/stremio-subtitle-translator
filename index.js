@@ -190,7 +190,13 @@ function parseId(id) {
   return { type: "unknown", season: 0, episode: 0 };
 }
 
-publishToCentral(`http://${process.env.ADDRESS}/manifest.json`);
+//running local comment this line, for publish to central uncomment this line
+// in local you dont have public ip, so you cant publish to central, you plugin dont show in the stremio store
+// in production you have public ip, so you can publish to central, and your plugin will show in the stremio store
+
+if (process.env.PUBLISH_IN_STREMIO_STORE == "TRUE") {
+  publishToCentral(`http://${process.env.ADDRESS}/manifest.json`);
+}
 
 const port = process.env.PORT || 3000;
 const address = process.env.ADDRESS || "0.0.0.0";
