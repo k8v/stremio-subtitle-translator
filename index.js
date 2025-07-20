@@ -176,7 +176,7 @@ builder.defineSubtitlesHandler(async function (args) {
 
       if (parsedSubs && parsedSubs.length > 0) {
         await createOrUpdateMessageSub(
-          "Translating embedded subtitles. Please wait 1 minutes and try again.",
+          "Translating embedded subtitles. Please wait 1 minute and try again.",
           imdbid,
           season,
           episode,
@@ -277,7 +277,7 @@ builder.defineSubtitlesHandler(async function (args) {
     console.log("Subtitles found on OpenSubtitles");
 
     await createOrUpdateMessageSub(
-      "Translating subtitles. Please wait 1 minutes and try again.",
+      "Translating subtitles. Please wait 1 minute and try again.",
       imdbid,
       season,
       episode,
