@@ -1,21 +1,23 @@
-# SQLite - Informações
+# SQLite - Information
 
-## Criação Automática
+## Auto Creation
 
-O SQLite não precisa de scripts de criação manual. As tabelas são criadas automaticamente quando o aplicativo é executado pela primeira vez.
+SQLite does not require manual execution of creation scripts. Tables are automatically created when the application is first run.
 
-## Localização do Banco
+## Database Location
 
-Por padrão, o arquivo do banco SQLite será criado em:
+By default, the SQLite database file is created at:
+
 - `./data/database.db`
 
-Você pode alterar o local configurando a variável `SQLITE_PATH` no arquivo `.env`.
+You can change the location by setting the `SQLITE_PATH` variable in the `.env` file.
 
-## Estrutura das Tabelas
+## Table Structure
 
-As tabelas criadas automaticamente são:
+The automatically created tables are as follows:
 
 ### series
+
 ```sql
 CREATE TABLE IF NOT EXISTS series (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,6 +28,7 @@ CREATE TABLE IF NOT EXISTS series (
 ```
 
 ### subtitle
+
 ```sql
 CREATE TABLE IF NOT EXISTS subtitle (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,6 +43,7 @@ CREATE TABLE IF NOT EXISTS subtitle (
 ```
 
 ### translation_queue
+
 ```sql
 CREATE TABLE IF NOT EXISTS translation_queue (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -52,31 +56,31 @@ CREATE TABLE IF NOT EXISTS translation_queue (
 )
 ```
 
-## Comandos Úteis
+## Useful Commands
 
-Para visualizar o banco SQLite, você pode usar:
+To view the SQLite database, you can use the following commands:
 
 ```bash
-# Instalar sqlite3 (se não estiver instalado)
+# Install sqlite3 (if not already installed)
 npm install -g sqlite3
 
-# Abrir o banco
+# Open the database
 sqlite3 ./data/database.db
 
-# Comandos no SQLite
-.tables                    # Listar tabelas
-.schema                    # Ver estrutura das tabelas
-.quit                      # Sair
+# SQLite commands
+.tables                    # List tables
+.schema                    # Show table structure
+.quit                      # Exit
 
-# Consultas úteis
+# Useful queries
 SELECT COUNT(*) FROM series;
 SELECT COUNT(*) FROM subtitle;
 SELECT COUNT(*) FROM translation_queue;
 ```
 
-## Vantagens do SQLite
+## Advantages of SQLite
 
-- **Portabilidade**: Arquivo único que pode ser facilmente copiado/movido
-- **Desenvolvimento**: Não requer instalação de servidor
-- **Backup**: Simplesmente copie o arquivo .db
-- **Performance**: Muito rápido para aplicações pequenas a médias 
+- **Portability**: Single file easily copied/moved
+- **Development**: No server installation required
+- **Backup**: Just copy the .db file
+- **Performance**: Very fast for small to medium applications

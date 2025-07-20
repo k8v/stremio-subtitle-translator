@@ -7,19 +7,26 @@ const opensubtitles = require("./opensubtitles");
 const connection = require("./connection");
 const languages = require("./languages");
 const { createOrUpdateMessageSub } = require("./subtitles");
-const translationQueue = require('./queues/translationQueue');
-const baseLanguages = require('./langs/base.lang.json');
-require('dotenv').config();
+const translationQueue = require("./queues/translationQueue");
+const baseLanguages = require("./langs/base.lang.json");
+require("dotenv").config();
 
-function generateSubtitleUrl(targetLanguage, imdbid, season, episode, provider, baseUrl = process.env.BASE_URL) {
-    return `${baseUrl}/subtitles/${provider}/${targetLanguage}/${imdbid}/season${season}/${imdbid}-translated-${episode}-1.srt`;
+function generateSubtitleUrl(
+  targetLanguage,
+  imdbid,
+  season,
+  episode,
+  provider,
+  baseUrl = process.env.BASE_URL
+) {
+  return `${baseUrl}/subtitles/${provider}/${targetLanguage}/${imdbid}/season${season}/${imdbid}-translated-${episode}-1.srt`;
 }
 
 const builder = new addonBuilder({
   id: "org.autotranslate.geanpn",
   version: "1.0.2",
   name: "Auto Subtitle Translate by geanpn",
-  logo: "./subtitles/logo.png",
+  logo: "./subtitles/logo.webp",
   configurable: true,
   behaviorHints: {
     configurable: true,
@@ -27,51 +34,83 @@ const builder = new addonBuilder({
   },
   config: [
     {
-        key: "provider",
-        title: "Provider",
-        type: "select",
-        required: true,
-        options: ["google(free)", "deepl", "chatgpt"],
+      key: "provider",
+      title: "Provider",
+      type: "select",
+      required: true,
+      options: ["Google Translate", "ChatGPT API"],
     },
     {
-        key: "apikey",
-        title: "API Key",
-        type: "text",
-        required: false,
-        dependencies: [
-            {
-              key: "provider",
-              value: ["deepl"]
-            }
-        ]
+      key: "apikey",
+      title: "ChatGPT API Key",
+      type: "text",
+      required: false,
+      dependencies: [
+        {
+          key: "provider",
+          value: ["ChatGPT API"],
+        },
+      ],
+    },
+    {
+      key: "base_url",
+      title: "ChatGPT API Base URL",
+      type: "text",
+      required: false,
+      default: "https://api.openai.com/v1/responses",
+      dependencies: [
+        {
+          key: "provider",
+          value: ["ChatGPT API"],
+        },
+      ],
+    },
+    {
+      key: "model_name",
+      title: "ChatGPT API Model Name",
+      type: "text",
+      required: false,
+      default: "gpt-4o-mini",
+      dependencies: [
+        {
+          key: "provider",
+          value: ["ChatGPT API"],
+        },
+      ],
     },
     {
       key: "translateto",
       title: "Translate to",
       type: "select",
       required: true,
-      options: baseLanguages
-    }
+      default: "English",
+      options: baseLanguages,
+    },
   ],
   description:
-    "This addon takes subtitles from OpenSubtitlesV3 then translates into desired language using Google Translate, Deepl or ChatGPT. For donations:in progress Bug report: geanpn@gmail.com",
+    "This addon takes subtitles from OpenSubtitlesV3 then translates into desired language using Google Translate, or ChatGPT (OpenAI Compatible Providers). For donations:in progress Bug report: geanpn@gmail.com",
   types: ["series", "movie"],
   catalogs: [],
   resources: ["subtitles"],
 });
 
-builder.defineSubtitlesHandler(async function (args) {
-  console.log("Requisição de legendas recebida:", args);
-  const { id, config } = args;
+const axios = require("axios");
 
-  const targetLanguage = languages.getKeyFromValue(config.translateto, config.provider);
+builder.defineSubtitlesHandler(async function (args) {
+  console.log("Subtitle request received:", args);
+  const { id, config, stream } = args;
+
+  const targetLanguage = languages.getKeyFromValue(
+    config.translateto,
+    config.provider
+  );
 
   if (!targetLanguage) {
-    console.log("Idioma não suportado:", config.translateto);
+    console.log("Unsupported language:", config.translateto);
     return Promise.resolve({ subtitles: [] });
   }
 
-  //Extract imdbid from id
+  // Extract imdbid from id
   let imdbid = null;
   if (id.startsWith("dcool-")) {
     imdbid = "tt5994346";
@@ -92,74 +131,263 @@ builder.defineSubtitlesHandler(async function (args) {
   const { type, season = null, episode = null } = parseId(id);
 
   try {
-    // 1. Primeiro verifica se já existe no banco
-    const existingSubtitle = await connection.getsubtitles(imdbid, season, episode, targetLanguage);
-
-    if (existingSubtitle.length > 0) {
-        console.log('Legenda encontrada no banco de dados:', generateSubtitleUrl(targetLanguage, imdbid, season, episode, config.provider));
-        return Promise.resolve({
-            subtitles: [{
-            id: `${imdbid}-subtitle`,
-            url: generateSubtitleUrl(targetLanguage, imdbid, season, episode, config.provider),
-            lang: `${targetLanguage}-translated`,
-            }]
-        });
-    }
-
-    // 2. Se não existe, busca no OpenSubtitles
-    const subs = await opensubtitles.getsubtitles(type, imdbid, season, episode, targetLanguage);
-    if (!subs || subs.length === 0) {
-        await createOrUpdateMessageSub("Nenhuma legenda encontrada no OpenSubtitles",imdbid, season, episode, targetLanguage, config.provider);
-        return Promise.resolve({
-            subtitles: [{
-            id: `${imdbid}-subtitle`,
-            url: generateSubtitleUrl(targetLanguage, imdbid, season, episode, config.provider),
-            lang: `${targetLanguage}-translated`,
-            }]
-        });
-    }
-
-    console.log('Legendas encontradas no OpenSubtitles')
-
-    await createOrUpdateMessageSub("Sua legenda está sendo traduzida, aguarde 30 segundos e tente novamente.",imdbid, season, episode, targetLanguage, config.provider);
-
-    // 3. Processa e traduz as legendas
-    translationQueue.push({
-        subs: subs,
-        imdbid: imdbid,
-        season: season,
-        episode: episode,
-        oldisocode: targetLanguage,
-        provider: config.provider,
-        apikey: config.apikey ?? null
-    });
-
-    console.log('Legendas processadas', generateSubtitleUrl(targetLanguage, imdbid, season, episode, config.provider));
-
-    await connection.addsubtitle(
-        imdbid,
-        type,
-        season,
-        episode,
-        generateSubtitleUrl(targetLanguage, imdbid, season, episode, config.provider).replace(`${process.env.BASE_URL}/`, ''),
-        targetLanguage
+    // 1. Check if already exists in database
+    const existingSubtitle = await connection.getsubtitles(
+      imdbid,
+      season,
+      episode,
+      targetLanguage
     );
 
+    if (existingSubtitle.length > 0) {
+      console.log(
+        "Subtitle found in database:",
+        generateSubtitleUrl(
+          targetLanguage,
+          imdbid,
+          season,
+          episode,
+          config.provider
+        )
+      );
+      return Promise.resolve({
+        subtitles: [
+          {
+            id: `${imdbid}-subtitle`,
+            url: generateSubtitleUrl(
+              targetLanguage,
+              imdbid,
+              season,
+              episode,
+              config.provider
+            ),
+            lang: `${targetLanguage}-translated`,
+          },
+        ],
+      });
+    }
 
+    // Process embedded subtitles
+    if (stream && stream.subtitles && stream.subtitles.length > 0) {
+      console.log("Embedded subtitles found:", stream.subtitles);
+      const embeddedSubtitle = stream.subtitles[0]; // Use the first embedded subtitle
+      const srtContent = await downloadSrt(embeddedSubtitle.url);
+      const parsedSubs = parseSrtContent(srtContent);
 
-    return Promise.resolve({
-        subtitles: [{
-        id: `${imdbid}-subtitle`,
-        url: generateSubtitleUrl(targetLanguage, imdbid, season, episode, config.provider),
-        lang: `${targetLanguage}-translated`,
-        }]
+      if (parsedSubs && parsedSubs.length > 0) {
+        await createOrUpdateMessageSub(
+          "Translating embedded subtitles. Please wait 1 minutes and try again.",
+          imdbid,
+          season,
+          episode,
+          targetLanguage,
+          config.provider
+        );
+
+        translationQueue.push({
+          subs: parsedSubs,
+          imdbid: imdbid,
+          season: season,
+          episode: episode,
+          oldisocode: targetLanguage,
+          provider: config.provider,
+          apikey: config.apikey ?? null,
+          base_url: config.base_url ?? "https://api.openai.com/v1/responses",
+          model_name: config.model_name ?? "gpt-4o-mini",
+        });
+
+        console.log(
+          "Embedded subtitles processed",
+          generateSubtitleUrl(
+            targetLanguage,
+            imdbid,
+            season,
+            episode,
+            config.provider
+          )
+        );
+
+        await connection.addsubtitle(
+          imdbid,
+          type,
+          season,
+          episode,
+          generateSubtitleUrl(
+            targetLanguage,
+            imdbid,
+            season,
+            episode,
+            config.provider
+          ).replace(`${process.env.BASE_URL}/`, ""),
+          targetLanguage
+        );
+
+        return Promise.resolve({
+          subtitles: [
+            {
+              id: `${imdbid}-subtitle`,
+              url: generateSubtitleUrl(
+                targetLanguage,
+                imdbid,
+                season,
+                episode,
+                config.provider
+              ),
+              lang: `${targetLanguage}-translated`,
+            },
+          ],
+        });
+      }
+    }
+
+    // 2. If not found, search OpenSubtitles
+    const subs = await opensubtitles.getsubtitles(
+      type,
+      imdbid,
+      season,
+      episode,
+      targetLanguage
+    );
+    if (!subs || subs.length === 0) {
+      await createOrUpdateMessageSub(
+        "No subtitles found on OpenSubtitles",
+        imdbid,
+        season,
+        episode,
+        targetLanguage,
+        config.provider
+      );
+      return Promise.resolve({
+        subtitles: [
+          {
+            id: `${imdbid}-subtitle`,
+            url: generateSubtitleUrl(
+              targetLanguage,
+              imdbid,
+              season,
+              episode,
+              config.provider
+            ),
+            lang: `${targetLanguage}-translated`,
+          },
+        ],
+      });
+    }
+
+    console.log("Subtitles found on OpenSubtitles");
+
+    await createOrUpdateMessageSub(
+      "Translating subtitles. Please wait 1 minutes and try again.",
+      imdbid,
+      season,
+      episode,
+      targetLanguage,
+      config.provider
+    );
+
+    // 3. Process and translate subtitles
+    translationQueue.push({
+      subs: subs,
+      imdbid: imdbid,
+      season: season,
+      episode: episode,
+      oldisocode: targetLanguage,
+      provider: config.provider,
+      apikey: config.apikey ?? null,
+      base_url: config.base_url ?? "https://api.openai.com/v1/responses",
+      model_name: config.model_name ?? "gpt-4o-mini",
     });
 
+    console.log(
+      "Subtitles processed",
+      generateSubtitleUrl(
+        targetLanguage,
+        imdbid,
+        season,
+        episode,
+        config.provider
+      )
+    );
+
+    await connection.addsubtitle(
+      imdbid,
+      type,
+      season,
+      episode,
+      generateSubtitleUrl(
+        targetLanguage,
+        imdbid,
+        season,
+        episode,
+        config.provider
+      ).replace(`${process.env.BASE_URL}/`, ""),
+      targetLanguage
+    );
+
+    return Promise.resolve({
+      subtitles: [
+        {
+          id: `${imdbid}-subtitle`,
+          url: generateSubtitleUrl(
+            targetLanguage,
+            imdbid,
+            season,
+            episode,
+            config.provider
+          ),
+          lang: `${targetLanguage}-translated`,
+        },
+      ],
+    });
   } catch (error) {
-    console.error("Erro ao processar legendas:", error);
+    console.error("Error processing subtitles:", error);
     return Promise.resolve({ subtitles: [] });
   }
 });
+
+// Helper function to download SRT file
+async function downloadSrt(url) {
+  try {
+    const response = await axios.get(url);
+    return response.data;
+  } catch (error) {
+    console.error("SRT file download error:", error);
+    throw error;
+  }
+}
+
+// Helper function to parse SRT content
+function parseSrtContent(srtContent) {
+  const subtitles = [];
+  const lines = srtContent.split(/\r?\n/);
+  let i = 0;
+  while (i < lines.length) {
+    if (lines[i].trim() === "") {
+      i++;
+      continue;
+    }
+    const index = parseInt(lines[i++]);
+    const timeMatch = lines[i++].match(
+      /(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})/
+    );
+    if (!timeMatch) {
+      continue;
+    }
+    const startTime = timeMatch[1];
+    const endTime = timeMatch[2];
+    let text = "";
+    while (i < lines.length && lines[i].trim() !== "") {
+      text += lines[i++] + "\n";
+    }
+    subtitles.push({
+      number: index,
+      startTime: startTime,
+      endTime: endTime,
+      text: text.trim(),
+    });
+  }
+  return subtitles;
+}
 
 function parseId(id) {
   if (id.startsWith("tt")) {
@@ -175,7 +403,7 @@ function parseId(id) {
       return { type: "movie", season: 1, episode: 1 };
     }
   } else if (id.startsWith("dcool-")) {
-    // Novo formato: dcool-tomorrow-with-you::tomorrow-with-you-episode-1
+    // New format: dcool-tomorrow-with-you::tomorrow-with-you-episode-1
     const match = id.match(/dcool-(.+)::(.+)-episode-(\d+)/);
     if (match) {
       const [, , title, episode] = match;
@@ -183,16 +411,15 @@ function parseId(id) {
         type: "series",
         title: title,
         episode: Number(episode),
-        season: 1 // Assumindo temporada 1 para este formato
+        season: 1, // Assuming season 1 for this format
       };
     }
   }
   return { type: "unknown", season: 0, episode: 0 };
 }
 
-//running local comment this line, for publish to central uncomment this line
-// in local you dont have public ip, so you cant publish to central, you plugin dont show in the stremio store
-// in production you have public ip, so you can publish to central, and your plugin will show in the stremio store
+// Comment out this line for local execution, uncomment for production deployment
+// Cannot publish to central locally as there is no public IP, so it won't show up in the Stremio store
 
 if (process.env.PUBLISH_IN_STREMIO_STORE == "TRUE") {
   publishToCentral(`http://${process.env.ADDRESS}/manifest.json`);
@@ -206,9 +433,14 @@ serveHTTP(builder.getInterface(), {
   port: port,
   address: address,
   static: "/subtitles",
-}).then(() => {
-  console.log(`Servidor rodando em http://${address}:${port}`);
-  console.log('Manifest disponível em:', `http://${address}:${port}/manifest.json`);
-}).catch(error => {
-  console.error('Erro ao iniciar servidor:', error);
-});
+})
+  .then(() => {
+    console.log(`Server started: http://${address}:${port}`);
+    console.log(
+      "Manifest available:",
+      `http://${address}:${port}/manifest.json`
+    );
+  })
+  .catch((error) => {
+    console.error("Server startup error:", error);
+  });

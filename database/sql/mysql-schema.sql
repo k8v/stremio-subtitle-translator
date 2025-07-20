@@ -1,5 +1,5 @@
--- Criação das tabelas para MySQL
--- Execute este arquivo após criar o banco de dados
+-- Table creation for MySQL
+-- Run this file after database creation
 
 CREATE TABLE IF NOT EXISTS series (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -36,20 +36,23 @@ CREATE TABLE IF NOT EXISTS translation_queue (
     INDEX idx_translation_queue_langcode (langcode)
 );
 
--- Comandos úteis para administração
+-- Commands for management
 
--- Limpar fila de tradução
--- DELETE FROM translation_queue;
+-- Clear translation queue
+DELETE FROM translation_queue;
 
--- Ver estatísticas das tabelas
--- SELECT 
---     'series' as tabela, COUNT(*) as registros 
--- FROM series 
--- UNION ALL 
--- SELECT 
---     'subtitle' as tabela, COUNT(*) as registros 
--- FROM subtitle 
--- UNION ALL 
--- SELECT 
---     'translation_queue' as tabela, COUNT(*) as registros 
--- FROM translation_queue; 
+-- Delete subtitles
+DELETE FROM subtitle;
+
+-- Show table statistics
+SELECT 
+    'series' as table_name, COUNT(*) as records 
+FROM series 
+UNION ALL 
+SELECT 
+    'subtitle' as table_name, COUNT(*) as records 
+FROM subtitle 
+UNION ALL 
+SELECT 
+    'translation_queue' as table_name, COUNT(*) as records 
+FROM translation_queue; 
