@@ -4,6 +4,8 @@ const fs = require("fs").promises;
 
 const opensubtitlesbaseurl = "https://opensubtitles-v3.strem.io/subtitles/";
 
+const isoCodeMapping = require("./langs/iso_code_mapping.json");
+
 const downloadSubtitles = async (
   subtitles,
   imdbid,
@@ -67,22 +69,42 @@ const getsubtitles = async (
 
   try {
     const response = await axios.get(url);
-    if (response.data.subtitles.length > 0) {
-      // Prioritize newisocode (targetLanguage)
-      const targetLangSubtitle = response.data.subtitles.find(
-        (subtitle) => subtitle.lang === newisocode
-      );
+    
 
-      if (targetLangSubtitle) {
-        return [{ url: targetLangSubtitle.url, lang: targetLangSubtitle.lang }];
-      } else {
-        // If targetLanguage subtitle not found, return the first available subtitle
-        const firstAvailableSubtitle = response.data.subtitles[0];
-        return [{ url: firstAvailableSubtitle.url, lang: firstAvailableSubtitle.lang }];
-      }
-    } else {
+    if (response.data.subtitles.length === 0) {
       return null;
     }
+
+    const subtitles = response.data.subtitles;
+
+    // Helper to find subtitle by language
+    const findSubtitle = (langCode) => {
+      return subtitles.find((subtitle) => {
+        const mappedLang = isoCodeMapping[subtitle.lang] || subtitle.lang;
+        
+        return mappedLang === langCode;
+      });
+    };
+
+    // 1. Prioritize newisocode (targetLanguage)
+    const targetLangSubtitle = findSubtitle(newisocode);
+    
+    if (targetLangSubtitle !== undefined && targetLangSubtitle !== null) {
+      return [{ url: targetLangSubtitle.url, lang: targetLangSubtitle.lang }];
+    }
+
+    // 2. If targetLanguage subtitle not found, try to find an English subtitle
+    const englishSubtitle = findSubtitle('en');
+    if (englishSubtitle) {
+      
+      return [{ url: englishSubtitle.url, lang: englishSubtitle.lang }];
+    }
+
+    // 3. If no English subtitle found, return the first available subtitle of any language
+    
+    
+    return [{ url: firstAvailableSubtitle.url, lang: firstAvailableSubtitle.lang }];
+
   } catch (error) {
     console.error("Subtitle URL error:", error);
     throw error;

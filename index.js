@@ -9,6 +9,7 @@ const languages = require("./languages");
 const { createOrUpdateMessageSub } = require("./subtitles");
 const translationQueue = require("./queues/translationQueue");
 const baseLanguages = require("./langs/base.lang.json");
+const isoCodeMapping = require("./langs/iso_code_mapping.json");
 require("dotenv").config();
 
 function generateSubtitleUrl(
@@ -94,8 +95,6 @@ const builder = new addonBuilder({
   resources: ["subtitles"],
 });
 
-const axios = require("axios");
-
 builder.defineSubtitlesHandler(async function (args) {
   console.log("Subtitle request received:", args);
   const { id, config, stream } = args;
@@ -167,8 +166,6 @@ builder.defineSubtitlesHandler(async function (args) {
       });
     }
 
-    
-
     // 2. If not found, search OpenSubtitles
     const subs = await opensubtitles.getsubtitles(
       type,
@@ -206,7 +203,9 @@ builder.defineSubtitlesHandler(async function (args) {
 
     const foundSubtitle = subs[0];
 
-    if (foundSubtitle.lang === targetLanguage) {
+    const mappedFoundSubtitleLang = isoCodeMapping[foundSubtitle.lang] || foundSubtitle.lang;
+
+    if (mappedFoundSubtitleLang === targetLanguage) {
       console.log(
         "Desired language subtitle found on OpenSubtitles, returning it directly."
       );
@@ -229,7 +228,9 @@ builder.defineSubtitlesHandler(async function (args) {
       });
     }
 
-    console.log("Subtitles found on OpenSubtitles, but not in target language. Translating...");
+    console.log(
+      "Subtitles found on OpenSubtitles, but not in target language. Translating..."
+    );
 
     await createOrUpdateMessageSub(
       "Translating subtitles. Please wait 1 minute and try again.",
@@ -299,8 +300,6 @@ builder.defineSubtitlesHandler(async function (args) {
     return Promise.resolve({ subtitles: [] });
   }
 });
-
-
 
 function parseId(id) {
   if (id.startsWith("tt")) {
