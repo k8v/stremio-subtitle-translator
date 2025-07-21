@@ -167,100 +167,7 @@ builder.defineSubtitlesHandler(async function (args) {
       });
     }
 
-    // Process embedded subtitles
-    if (stream && stream.subtitles && stream.subtitles.length > 0) {
-      console.log("Embedded subtitles found:", stream.subtitles);
-
-      // Check if the desired language is already in the embedded subtitles
-      const preferredSubtitle = stream.subtitles.find(
-        (sub) => sub.lang === targetLanguage
-      );
-
-      if (preferredSubtitle) {
-        console.log(
-          "Desired language found in embedded subtitles, returning it directly."
-        );
-        return Promise.resolve({
-          subtitles: [
-            {
-              id: preferredSubtitle.id || `${imdbid}-subtitle-embedded`,
-              url: preferredSubtitle.url,
-              lang: preferredSubtitle.lang,
-            },
-          ],
-        });
-      }
-
-      // If not, proceed with translating the first available embedded subtitle
-      const embeddedSubtitle = stream.subtitles[0]; // Use the first embedded subtitle
-      const srtContent = await downloadSrt(embeddedSubtitle.url);
-      const parsedSubs = parseSrtContent(srtContent);
-
-      if (parsedSubs && parsedSubs.length > 0) {
-        await createOrUpdateMessageSub(
-          "Translating embedded subtitles. Please wait 1 minute and try again.",
-          imdbid,
-          season,
-          episode,
-          targetLanguage,
-          config.provider
-        );
-
-        translationQueue.push({
-          subs: parsedSubs,
-          imdbid: imdbid,
-          season: season,
-          episode: episode,
-          oldisocode: targetLanguage,
-          provider: config.provider,
-          apikey: config.apikey ?? null,
-          base_url: config.base_url ?? "https://api.openai.com/v1/responses",
-          model_name: config.model_name ?? "gpt-4o-mini",
-        });
-
-        console.log(
-          "Embedded subtitles processed",
-          generateSubtitleUrl(
-            targetLanguage,
-            imdbid,
-            season,
-            episode,
-            config.provider
-          )
-        );
-
-        await connection.addsubtitle(
-          imdbid,
-          type,
-          season,
-          episode,
-          generateSubtitleUrl(
-            targetLanguage,
-            imdbid,
-            season,
-            episode,
-            config.provider
-          ).replace(`${process.env.BASE_URL}/`, ""),
-          targetLanguage
-        );
-
-        return Promise.resolve({
-          subtitles: [
-            {
-              id: `${imdbid}-subtitle`,
-              url: generateSubtitleUrl(
-                targetLanguage,
-                imdbid,
-                season,
-                episode,
-                config.provider
-              ),
-              lang: `${targetLanguage}-translated`,
-            },
-          ],
-        });
-      }
-    }
+    
 
     // 2. If not found, search OpenSubtitles
     const subs = await opensubtitles.getsubtitles(
@@ -393,49 +300,7 @@ builder.defineSubtitlesHandler(async function (args) {
   }
 });
 
-// Helper function to download SRT file
-async function downloadSrt(url) {
-  try {
-    const response = await axios.get(url);
-    return response.data;
-  } catch (error) {
-    console.error("SRT file download error:", error);
-    throw error;
-  }
-}
 
-// Helper function to parse SRT content
-function parseSrtContent(srtContent) {
-  const subtitles = [];
-  const lines = srtContent.split(/\r?\n/);
-  let i = 0;
-  while (i < lines.length) {
-    if (lines[i].trim() === "") {
-      i++;
-      continue;
-    }
-    const index = parseInt(lines[i++]);
-    const timeMatch = lines[i++].match(
-      /(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})/
-    );
-    if (!timeMatch) {
-      continue;
-    }
-    const startTime = timeMatch[1];
-    const endTime = timeMatch[2];
-    let text = "";
-    while (i < lines.length && lines[i].trim() !== "") {
-      text += lines[i++] + "\n";
-    }
-    subtitles.push({
-      number: index,
-      startTime: startTime,
-      endTime: endTime,
-      text: text.trim(),
-    });
-  }
-  return subtitles;
-}
 
 function parseId(id) {
   if (id.startsWith("tt")) {
