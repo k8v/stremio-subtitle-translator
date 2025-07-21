@@ -25,7 +25,7 @@ const downloadSubtitles = async (
   let filepaths = [];
 
   for (let i = 0; i < subtitles.length; i++) {
-    const url = subtitles[i];
+    const url = subtitles[i].url;
     try {
       console.log(url);
       const response = await axios.get(url, { responseType: "arraybuffer" });
