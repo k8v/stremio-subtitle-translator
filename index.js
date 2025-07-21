@@ -170,6 +170,28 @@ builder.defineSubtitlesHandler(async function (args) {
     // Process embedded subtitles
     if (stream && stream.subtitles && stream.subtitles.length > 0) {
       console.log("Embedded subtitles found:", stream.subtitles);
+
+      // Check if the desired language is already in the embedded subtitles
+      const preferredSubtitle = stream.subtitles.find(
+        (sub) => sub.lang === targetLanguage
+      );
+
+      if (preferredSubtitle) {
+        console.log(
+          "Desired language found in embedded subtitles, returning it directly."
+        );
+        return Promise.resolve({
+          subtitles: [
+            {
+              id: preferredSubtitle.id || `${imdbid}-subtitle-embedded`,
+              url: preferredSubtitle.url,
+              lang: preferredSubtitle.lang,
+            },
+          ],
+        });
+      }
+
+      // If not, proceed with translating the first available embedded subtitle
       const embeddedSubtitle = stream.subtitles[0]; // Use the first embedded subtitle
       const srtContent = await downloadSrt(embeddedSubtitle.url);
       const parsedSubs = parseSrtContent(srtContent);
@@ -248,6 +270,7 @@ builder.defineSubtitlesHandler(async function (args) {
       episode,
       targetLanguage
     );
+
     if (!subs || subs.length === 0) {
       await createOrUpdateMessageSub(
         "No subtitles found on OpenSubtitles",
@@ -274,7 +297,32 @@ builder.defineSubtitlesHandler(async function (args) {
       });
     }
 
-    console.log("Subtitles found on OpenSubtitles");
+    const foundSubtitle = subs[0];
+
+    if (foundSubtitle.lang === targetLanguage) {
+      console.log(
+        "Desired language subtitle found on OpenSubtitles, returning it directly."
+      );
+      await connection.addsubtitle(
+        imdbid,
+        type,
+        season,
+        episode,
+        foundSubtitle.url.replace(`${process.env.BASE_URL}/`, ""),
+        targetLanguage
+      );
+      return Promise.resolve({
+        subtitles: [
+          {
+            id: `${imdbid}-subtitle`,
+            url: foundSubtitle.url,
+            lang: foundSubtitle.lang,
+          },
+        ],
+      });
+    }
+
+    console.log("Subtitles found on OpenSubtitles, but not in target language. Translating...");
 
     await createOrUpdateMessageSub(
       "Translating subtitles. Please wait 1 minute and try again.",
@@ -287,7 +335,7 @@ builder.defineSubtitlesHandler(async function (args) {
 
     // 3. Process and translate subtitles
     translationQueue.push({
-      subs: subs,
+      subs: [foundSubtitle], // Pass the found subtitle to the queue
       imdbid: imdbid,
       season: season,
       episode: episode,

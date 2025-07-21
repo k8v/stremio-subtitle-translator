@@ -68,20 +68,17 @@ const getsubtitles = async (
   try {
     const response = await axios.get(url);
     if (response.data.subtitles.length > 0) {
-      if (
-        response.data.subtitles.filter(
-          (subtitle) => subtitle.lang === newisocode
-        ).length > 0
-      ) {
-        return null;
+      // Prioritize newisocode (targetLanguage)
+      const targetLangSubtitle = response.data.subtitles.find(
+        (subtitle) => subtitle.lang === newisocode
+      );
+
+      if (targetLangSubtitle) {
+        return [{ url: targetLangSubtitle.url, lang: targetLangSubtitle.lang }];
       } else {
-        let subtitles = response.data.subtitles
-          .filter((subtitle) => subtitle.lang === "eng")
-          .map((subtitle) => subtitle.url);
-        if (subtitles.length === 0) {
-          subtitles = [response.data.subtitles[0].url];
-        }
-        return subtitles.slice(0, 1);
+        // If targetLanguage subtitle not found, return the first available subtitle
+        const firstAvailableSubtitle = response.data.subtitles[0];
+        return [{ url: firstAvailableSubtitle.url, lang: firstAvailableSubtitle.lang }];
       }
     } else {
       return null;
