@@ -249,9 +249,10 @@ async function startTranslation(
   base_url,
   model_name
 ) {
+  let filepaths = [];
   try {
     const processor = new SubtitleProcessor();
-    let filepaths = await opensubtitles.downloadSubtitles(
+    filepaths = await opensubtitles.downloadSubtitles(
       subtitles,
       imdbid,
       season,
@@ -280,18 +281,34 @@ async function startTranslation(
         base_url,
         model_name
       );
-      await connection.deletetranslationQueue(
-        imdbid,
-        season,
-        episode,
-        oldisocode
-      );
       return true;
     }
     return false;
   } catch (error) {
     console.error("General catch error:", error);
     return false;
+  } finally {
+    // Cleanup: Delete downloaded original subtitle files
+    for (const fp of filepaths) {
+      try {
+        await fs.unlink(fp);
+        console.log(`Cleaned up downloaded file: ${fp}`);
+      } catch (unlinkError) {
+        console.error(`Error cleaning up file ${fp}:`, unlinkError);
+      }
+    }
+    // Cleanup: Delete entry from translation queue in DB
+    try {
+      await connection.deletetranslationQueue(
+        imdbid,
+        season,
+        episode,
+        oldisocode
+      );
+      console.log("Cleaned up translation queue entry in DB.");
+    } catch (dbCleanupError) {
+      console.error("Error cleaning up DB translation queue entry:", dbCleanupError);
+    }
   }
 }
 

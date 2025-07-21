@@ -6,18 +6,20 @@ function getValueFromKey(key) {
 }
 
 function getKeyFromValue(value, provider) {
+  let langMap;
   switch (provider) {
     case "Google Translate":
-      data = googleLanguages;
+      langMap = googleLanguages;
       break;
     case "ChatGPT API":
-      return value;
+      langMap = chatgptLanguages;
+      break;
     default:
       throw new Error("Provider not found");
   }
 
-  for (let key in data) {
-    if (data[key] === value) {
+  for (let key in langMap) {
+    if (langMap[key] === value) {
       return key;
     }
   }
