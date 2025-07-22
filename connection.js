@@ -2,21 +2,21 @@ const DatabaseFactory = require('./database/DatabaseFactory');
 
 let dbAdapter = null;
 
-// Inicializar conexão com o banco de dados
+// Initialize database connection
 async function initializeDatabase() {
     if (!dbAdapter) {
         try {
             dbAdapter = await DatabaseFactory.createAndConnect();
             console.log('Database initialized successfully!');
         } catch (error) {
-            console.error('Error initializing database:', error);
+            console.error('Database initialization error:', error);
             throw error;
         }
     }
     return dbAdapter;
 }
 
-// Obter instância do adapter
+// Get adapter instance
 async function getAdapter() {
     if (!dbAdapter) {
         await initializeDatabase();
@@ -24,7 +24,7 @@ async function getAdapter() {
     return dbAdapter;
 }
 
-// Métodos de conveniência que mantêm a compatibilidade com a API anterior
+// Utility methods for backward API compatibility
 async function addToTranslationQueue(imdbid, season = null, episode = null, count, langcode) {
     const adapter = await getAdapter();
     return adapter.addToTranslationQueue(imdbid, season, episode, count, langcode);
@@ -70,7 +70,7 @@ async function checksubtitle(imdbid, season = null, episode = null, subtitlepath
     return adapter.checksubtitle(imdbid, season, episode, subtitlepath, langcode);
 }
 
-// Função para fechar conexão
+// Function to close the connection
 async function closeConnection() {
     if (dbAdapter) {
         await dbAdapter.disconnect();
@@ -78,7 +78,7 @@ async function closeConnection() {
     }
 }
 
-// Inicializar automaticamente ao carregar o módulo
+// Automatically initialize on module load
 initializeDatabase().catch(console.error);
 
 module.exports = {

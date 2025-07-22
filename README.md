@@ -1,75 +1,98 @@
-# Auto Subtitle Translate Add-on for Stremio
+# Stremio Auto Subtitle Translate Addon
 
-A Stremio add-on that automatically translates subtitles from OpenSubtitles into your desired language using various translation providers.
-
+This Stremio addon automatically translates subtitles from OpenSubtitles to your desired language using various translation providers.
 
 ## Features
 
 - Fetches subtitles from OpenSubtitlesV3
-- Supports multiple translation providers:
-  - Google Translate
-    - Free API
-    - Web Scraping Method
-  - DeepL API
-  - ChatGPT
-  - Google Gemini
-  - DeepGram
-  - RapidAPI Services
-    - Microsoft Translator
-    - MyMemory
-    - LingVanex
 - Configurable target language
-- Queue system for handling translation requests
-- Caches translated subtitles for better performance
+- Queue system for processing translation requests
+- Caching of translated subtitles for improved performance
 - Automatic provider fallback
-- Rate limiting protection
+- Rate limit protection
 - Provider rotation for optimal performance
 
 ## How it Works
 
-The add-on follows this workflow:
+This addon follows the following workflow:
 
 1. Receives subtitle request from Stremio
-2. Checks if translated subtitle already exists in database
-3. If not found, fetches subtitle from OpenSubtitles
-4. Queues the subtitle for translation
-5. Returns a placeholder message while translation is processing
-6. Saves translated subtitle once complete
+2. Checks if translated subtitles exist in the database
+3. If not found, fetches subtitles from OpenSubtitles
+4. Adds subtitles to a queue for translation
+5. Returns a placeholder message during translation processing
+6. Saves translated subtitles upon completion
 
 ## Configuration
 
-The add-on can be configured through Stremio with these options:
+This addon can be configured via Stremio with the following options:
 
-- Provider: Choose between Google Translate (free), DeepL, or ChatGPT
-- API Key: Required for DeepL integration
+- Provider: Choose from Google Translate, or ChatGPT (OpenAI Compatible Providers)
+- BASE URL: Required for ChatGPT
+  - ChatGPT: https://api.openai.com/v1/responses
+  - Gemini: https://generativelanguage.googleapis.com/v1beta/openai/
+  - OpenRouter: https://openrouter.ai/api/v1/chat/completions
+- API Key: Required for ChatGPT
 - Target Language: Select your desired translation language
 
 ## Technical Details
 
 - Built with Node.js
 - Uses `stremio-addon-sdk` for Stremio integration
-- Implements queue system using `better-queue`
-- Stores subtitles in local filesystem
-- Environment variables for configuration
+- Implements a queue system using `better-queue`
+- Stores subtitles on the local file system
+
+### Translation Providers
+
+- Google Translate
+  - Web scraping method
+- ChatGPT (Compatible API)
+  - Google Gemini
+  - OpenRouter
+
+### Queue System
+
+This addon uses a queue system to efficiently process translation requests:
+
+- Implements `better-queue` to manage translation tasks
+- Concurrent processing of subtitles
+- Automatic retries on failure
+- Progress tracking and status updates
+
+### Storage
+
+- Subtitles are stored on the local file system
+- Organized by provider, language, and media ID
+- Translations are cached for improved performance
+
+### Translation Process
+
+1. Subtitle files are parsed and split into chunks
+2. Each chunk is translated using the selected provider
+3. Translated chunks are reassembled while maintaining timing
+4. The final subtitle file is saved in SRT format
 
 ## Installation
 
 1. Web Installation (Recommended)
+
    - Open Stremio
-   - Go to: in construction
-   - Click "Install Add-on"
-   - Select your preferred translation settings
+   - Go to the following URL: In progress
+   - Click "Install Addon"
+   - Select your desired translation settings
    - Click "Install"
-   - The add-on will be automatically configured in your Stremio
+   - The addon will be automatically configured in Stremio
 
 2. Manual Installation
+
    - Open Stremio
-   - Go to Add-ons
-   - Click the "Community Add-ons" tab
-   - Paste this URL: in construction
+   - Navigate to Addons
+   - Click the "Community Addons" tab
+   - Paste this URL: In progress
    - Click "Install"
 
 3. Self-Hosting
+
    ```bash
    # Clone the repository
    git clone https://github.com/HimAndRobot/stremio-translate-subtitle-by-geanpn.git
@@ -78,18 +101,19 @@ The add-on can be configured through Stremio with these options:
    # Install dependencies
    npm install
 
-   # Create .env file with required settings
-   PORT=3000
-   ADDRESS=0.0.0.0
-   BASE_URL=http://localhost:3000
+   # Create necessary directories
+   mkdir -p debug subtitles
 
-   # Start the add-on
+   # Create a .env file from .env.example
+   cp .env.example .env
+
+   # Start the addon
    npm start
    ```
-   Then add `http://localhost:3000/manifest.json` to Stremio
 
+   Then, add `http://localhost:3000/manifest.json` to Stremio.
 
-The add-on will be available at `http://localhost:3000`
+The addon will be available at `http://localhost:3000`.
 
 ## Environment Variables
 
@@ -97,34 +121,14 @@ The add-on will be available at `http://localhost:3000`
 - `ADDRESS`: Server address (default: 0.0.0.0)
 - `BASE_URL`: Base URL for subtitle files
 
-## Technical Details
-
-### Queue System
-The add-on uses a queue system to handle translation requests efficiently:
-- Implements `better-queue` for managing translation tasks
-- Concurrent processing of subtitles
-- Automatic retries on failure
-- Progress tracking and status updates
-
-### Storage
-- Subtitles are stored in the local filesystem
-- Organized by provider, language, and media ID
-- Cached translations for improved performance
-
-### Translation Process
-1. Subtitle files are parsed and split into chunks
-2. Each chunk is translated using the selected provider
-3. Translated chunks are reassembled maintaining timing
-4. Final subtitle file is saved in SRT format
-
 ## Contributing
 
 Bug reports and pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
 ## Support
 
-For bug reports: geanpn@gmail.com
-For donations:
+Bug reports: geanpn@gmail.com
+Donations: geanpn@gmail.com
 
 ## License
 
@@ -134,27 +138,15 @@ For donations:
 
 This project is based on [Auto-Subtitle-Translate-by-Sonsuz-Anime](https://github.com/sonsuzanime/Auto-Subtitle-Translate-by-Sonsuz-Anime) by @sonsuzanime. The original project was enhanced with:
 
-### Additional Translation Providers:
-- Google Translate (Free)
-  - API Integration
-  - Web Scraping Method
-- DeepL API
-- ChatGPT
-- Google Gemini
-- DeepGram
-- RapidAPI Providers
-  - Microsoft Translator
-  - MyMemory
-  - LingVanex
-
 ### Improvements:
-- Code optimizations
+
+- Code optimization
 - Queue system for handling multiple translation requests
 - Improved error handling
 - Better caching system
 - Provider fallback system
-- Rate limiting protection
+- Rate limit protection
 - Automatic provider rotation
 - Chunk optimization for large subtitles
 
-Special thanks to @sonsuzanime for the original implementation that made this project possible.
+Thanks to @sonsuzanime for providing the original implementation that made this project possible.

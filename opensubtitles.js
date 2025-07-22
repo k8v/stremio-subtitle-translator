@@ -1,16 +1,25 @@
-const axios = require('axios');
+const axios = require("axios");
 const connection = require("./connection");
-const fs = require('fs').promises;
+const fs = require("fs").promises;
 
-const opensubtitlesbaseurl = 'https://opensubtitles-v3.strem.io/subtitles/';
+const opensubtitlesbaseurl = "https://opensubtitles-v3.strem.io/subtitles/";
 
-const downloadSubtitles = async (subtitles,imdbid,season = null,episode = null,oldisocode) => {
+const isoCodeMapping = require("./langs/iso_code_mapping.json");
+
+const downloadSubtitles = async (
+  subtitles,
+  imdbid,
+  season = null,
+  episode = null,
+  oldisocode
+) => {
   let uniqueTempFolder = null;
-  if (season && episode){
-    await fs.mkdir(`subtitles/${oldisocode}/${imdbid}/season${season}`, { recursive: true });
+  if (season && episode) {
+    await fs.mkdir(`subtitles/${oldisocode}/${imdbid}/season${season}`, {
+      recursive: true,
+    });
     uniqueTempFolder = `subtitles/${oldisocode}/${imdbid}/season${season}`;
-  }
-  else{
+  } else {
     await fs.mkdir(`subtitles/${oldisocode}/${imdbid}`, { recursive: true });
     uniqueTempFolder = `subtitles/${oldisocode}/${imdbid}`;
   }
@@ -18,22 +27,22 @@ const downloadSubtitles = async (subtitles,imdbid,season = null,episode = null,o
   let filepaths = [];
 
   for (let i = 0; i < subtitles.length; i++) {
-    const url = subtitles[i];
+    const url = subtitles[i].url;
     try {
       console.log(url);
-      const response = await axios.get(url, { responseType: 'arraybuffer' });
+      const response = await axios.get(url, { responseType: "arraybuffer" });
 
       let filePath = null;
-      if(episode)
-      {
-        filePath = `${uniqueTempFolder}/${imdbid}-subtitle_${episode}-${i + 1}.srt`;
-      }
-      else{
+      if (episode) {
+        filePath = `${uniqueTempFolder}/${imdbid}-subtitle_${episode}-${
+          i + 1
+        }.srt`;
+      } else {
         filePath = `${uniqueTempFolder}/${imdbid}-subtitle-${i + 1}.srt`;
       }
       console.log(filePath);
       await fs.writeFile(filePath, response.data);
-      console.log(`Subtitles downloaded and saved: ${filePath}`);
+      console.log(`Subtitle downloaded and saved: ${filePath}`);
       filepaths.push(filePath);
     } catch (error) {
       console.error(`Subtitle download error: ${error.message}`);
@@ -43,45 +52,63 @@ const downloadSubtitles = async (subtitles,imdbid,season = null,episode = null,o
   return filepaths;
 };
 
-const getsubtitles = async (type, imdbid, season = null, episode = null,newisocode) => {
+const getsubtitles = async (
+  type,
+  imdbid,
+  season = null,
+  episode = null,
+  newisocode
+) => {
   let url = opensubtitlesbaseurl;
 
-  if (type === 'series') {
-    url = url.concat(type, '/', imdbid, ':', season, ':', episode, '.json');
+  if (type === "series") {
+    url = url.concat(type, "/", imdbid, ":", season, ":", episode, ".json");
   } else {
-    url = url.concat(type,'/' ,imdbid, '.json');
+    url = url.concat(type, "/", imdbid, ".json");
   }
 
   try {
     const response = await axios.get(url);
-    if (response.data.subtitles.length>0) {
-      if(response.data.subtitles.filter(subtitle => subtitle.lang === newisocode).length > 0)
-      {
-        return null;
-      }
-      else{
-        let subtitles = response.data.subtitles
-        .filter(subtitle => subtitle.lang === 'eng')
-        .map(subtitle => subtitle.url);
-        if(subtitles.length === 0){
-          subtitles = [response.data.subtitles[0].url]
+    
 
-        }
-        return subtitles.slice(0, 1);
-
-      }
-    }
-    else{
+    if (response.data.subtitles.length === 0) {
       return null;
     }
 
+    const subtitles = response.data.subtitles;
+
+    // Helper to find subtitle by language
+    const findSubtitle = (langCode) => {
+      return subtitles.find((subtitle) => {
+        const mappedLang = isoCodeMapping[subtitle.lang] || subtitle.lang;
+        
+        return mappedLang === langCode;
+      });
+    };
+
+    // 1. Prioritize newisocode (targetLanguage)
+    const targetLangSubtitle = findSubtitle(newisocode);
+    
+    if (targetLangSubtitle !== undefined && targetLangSubtitle !== null) {
+      return [{ url: targetLangSubtitle.url, lang: targetLangSubtitle.lang }];
+    }
+
+    // 2. If targetLanguage subtitle not found, try to find an English subtitle
+    const englishSubtitle = findSubtitle('en');
+    if (englishSubtitle) {
+      
+      return [{ url: englishSubtitle.url, lang: englishSubtitle.lang }];
+    }
+
+    // 3. If no English subtitle found, return the first available subtitle of any language
+    
+    
+    return [{ url: firstAvailableSubtitle.url, lang: firstAvailableSubtitle.lang }];
+
   } catch (error) {
-    console.error('Subs url error:', error);
+    console.error("Subtitle URL error:", error);
     throw error;
   }
 };
 
-
-
-
-module.exports = { getsubtitles, downloadSubtitles};
+module.exports = { getsubtitles, downloadSubtitles };

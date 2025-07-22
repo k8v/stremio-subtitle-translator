@@ -1,43 +1,69 @@
 {
-    "id": "org.autotranslate.geanpn",
-    "version": "1.0.2",
-    "name": "Auto Subtitle Translate by geanpn",
-    "logo": "./subtitles/logo.png",
+  "id": "org.autotranslate.geanpn",
+  "version": "1.0.2",
+  "name": "Auto Subtitle Translate by geanpn",
+  "logo": "./subtitles/logo.webp",
+  "configurable": true,
+  "behaviorHints": {
     "configurable": true,
-    "behaviorHints": {
-      "configurable": true,
-      "configurationRequired": true
+    "configurationRequired": true
+  },
+  "config": [
+    {
+      "key": "provider",
+      "title": "Provider",
+      "type": "select",
+      "required": true,
+      "options": ["Google Translate", "ChatGPT API"]
     },
-    "config": [
-      {
-        "key": "provider",
-        "title": "Provider",
-        "type": "select",
-        "required": true,
-        "options": ["google(free)", "deepl", "chatgpt"]
-      },
-      {
-        "key": "apikey",
-        "title": "API Key",
-        "type": "text",
-        "required": false,
-        "dependencies": [
-          {
-            "key": "provider",
-            "value": ["deepl"]
-          }
-        ]
-      },
-      {
-        "key": "translateto",
-        "title": "Translate to",
-        "type": "select",
-        "required": true,
-        "options": ["Portuguese (Brazil)"]
-      }
-    ],
-    "description": "This addon takes subtitles from OpenSubtitlesV3 then translates into desired language using Google Translate, Deepl or ChatGPT. For donations:in progress Bug report: geanpn@gmail.com",
-    "types": ["series", "movie"],
-    "catalogs": [],
-    "resources": ["subtitles"]
+    {
+      "key": "apikey",
+      "title": "API Key",
+      "type": "text",
+      "required": false,
+      "dependencies": [
+        {
+          "key": "provider",
+          "value": ["ChatGPT API"]
+        }
+      ]
+    },
+    {
+      "key": "base_url",
+      "title": "ChatGPT API Base URL",
+      "type": "text",
+      "required": false,
+      "default": "https://api.openai.com/v1/responses",
+      "dependencies": [
+        {
+          "key": "provider",
+          "value": ["ChatGPT API"]
+        }
+      ]
+    },
+    {
+      "key": "model_name",
+      "title": "Model Name",
+      "type": "text",
+      "required": false,
+      "default": "gpt-4o-mini",
+      "dependencies": [
+        {
+          "key": "provider",
+          "value": ["ChatGPT API"]
+        }
+      ]
+    },
+    {
+      "key": "translateto",
+      "title": "Translate to",
+      "type": "select",
+      "required": true,
+      "options": ["English"]
+    }
+  ],
+  "description": "This addon takes subtitles from OpenSubtitlesV3 then translates into desired language using Google Translate, or ChatGPT. For donations:in progress Bug report: geanpn@gmail.com",
+  "types": ["series", "movie"],
+  "catalogs": [],
+  "resources": ["subtitles"]
 }
