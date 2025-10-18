@@ -1,0 +1,52 @@
+name: Docker CI
+
+# Déclenche le workflow lors de chaque 'push' sur la branche 'main'
+on:
+  push:
+    branches: [ "main" ]
+
+# Permet au GITHUB_TOKEN d'écrire dans les packages (nécessaire pour push l'image)
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU (pour les builds multi-plateformes)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          # Utilise le jeton GitHub généré automatiquement
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Determine image tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # 🚨 AJOUT CRITIQUE : Construction multi-plateformes 🚨
+          platforms: linux/amd64,linux/arm64
