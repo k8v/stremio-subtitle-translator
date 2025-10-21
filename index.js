@@ -25,7 +25,7 @@ function generateSubtitleUrl(
 
 const builder = new addonBuilder({
   id: "org.autotranslate.geanpn",
-  version: "1.0.2",
+  version: "1.0.6", // Incrémentation de la version
   name: "Auto Subtitle Translate by geanpn",
   logo: "./subtitles/logo.webp",
   configurable: true,
@@ -52,6 +52,14 @@ const builder = new addonBuilder({
           value: ["ChatGPT API"],
         },
       ],
+    },
+    {
+      key: "tmdb_apikey", 
+      // MISE À JOUR: Lien hypertexte intégré directement dans le titre
+      title: 'TMDb API Key (Requis pour Gestdown Series) <a href="https://www.themoviedb.org/settings/api" target="_blank" style="color: #63b3ed; text-decoration: underline;">API</a>',
+      type: "text",
+      required: true, 
+      // Suppression de addon_config_link
     },
     {
       key: "base_url",
@@ -89,7 +97,7 @@ const builder = new addonBuilder({
     },
   ],
   description:
-    "This addon takes subtitles from OpenSubtitlesV3 then translates into desired language using Google Translate, or ChatGPT (OpenAI Compatible Providers). For donations:in progress Bug report: geanpn@gmail.com",
+    "This addon takes subtitles from OpenSubtitlesV3, Wyzie, or Gestdown then translates into desired language using Google Translate, or ChatGPT (OpenAI Compatible Providers). Requires a TMDb API Key for reliable series subtitle retrieval via Gestdown. For donations:in progress Bug report: geanpn@gmail.com",
   types: ["series", "movie"],
   catalogs: [],
   resources: ["subtitles"],
@@ -97,7 +105,8 @@ const builder = new addonBuilder({
 
 builder.defineSubtitlesHandler(async function (args) {
   console.log("Subtitle request received:", args);
-  const { id, config, stream } = args;
+  // Récupération de la clé TMDb de la configuration via destructuring
+  const { id, config: { tmdb_apikey, ...config }, stream } = args; 
 
   const targetLanguage = languages.getKeyFromValue(
     config.translateto,
@@ -167,17 +176,19 @@ builder.defineSubtitlesHandler(async function (args) {
     }
 
     // 2. If not found, search OpenSubtitles
+    // PASSAGE DE LA CLÉ TMDB ici
     const subs = await opensubtitles.getsubtitles(
       type,
       imdbid,
       season,
       episode,
-      targetLanguage
+      targetLanguage,
+      tmdb_apikey 
     );
 
     if (!subs || subs.length === 0) {
       await createOrUpdateMessageSub(
-        "No subtitles found on OpenSubtitles",
+        "No subtitles found on OpenSubtitles or other sources",
         imdbid,
         season,
         episode,
@@ -207,7 +218,7 @@ builder.defineSubtitlesHandler(async function (args) {
 
     if (mappedFoundSubtitleLang === targetLanguage) {
       console.log(
-        "Desired language subtitle found on OpenSubtitles, returning it directly."
+        "Desired language subtitle found on source, returning it directly."
       );
       await connection.addsubtitle(
         imdbid,
@@ -229,7 +240,7 @@ builder.defineSubtitlesHandler(async function (args) {
     }
 
     console.log(
-      "Subtitles found on OpenSubtitles, but not in target language. Translating..."
+      "Subtitles found on source, but not in target language. Translating..."
     );
 
     await createOrUpdateMessageSub(
