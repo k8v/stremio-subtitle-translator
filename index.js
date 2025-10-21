@@ -10,6 +10,8 @@ const { createOrUpdateMessageSub } = require("./subtitles");
 const translationQueue = require("./queues/translationQueue");
 const baseLanguages = require("./langs/base.lang.json");
 const isoCodeMapping = require("./langs/iso_code_mapping.json");
+const fs = require("fs").promises; // Ajout de fs pour la manipulation de fichiers
+
 require("dotenv").config();
 
 function generateSubtitleUrl(
@@ -23,11 +25,57 @@ function generateSubtitleUrl(
   return `${baseUrl}/subtitles/${provider}/${targetLanguage}/${imdbid}/season${season}/${imdbid}-translated-${episode}-1.srt`;
 }
 
+// --- NOUVELLE FONCTION UTILITAIRE POUR VÉRIFIER LE FICHIER ---
+/**
+ * Vérifie si le fichier SRT existe localement et s'il contient le message d'attente.
+ * @param {string} localFilePath - Le chemin absolu ou relatif du fichier SRT sur le disque.
+ * @returns {Promise<boolean>} True si le fichier est un fichier de message temporaire et doit être supprimé.
+ */
+async function isTemporaryMessageFile(localFilePath) {
+    const TEMP_MESSAGE = "Translating subtitles. Please wait 1 minute and try again.";
+    
+    // Le chemin d'accès statique commence à '/subtitles', on doit le compléter si nécessaire
+    // Si votre serveur sert les fichiers depuis le répertoire 'subtitles' à la racine de votre projet:
+    // const absolutePath = path.join(__dirname, localFilePath); // Si path est importé
+    const absolutePath = `./${localFilePath}`; // Chemin relatif simple
+
+    try {
+        const content = await fs.readFile(absolutePath, 'utf8');
+        // Vérification simple si le message est présent dans le contenu
+        if (content.includes(TEMP_MESSAGE)) {
+            console.log(`[File Check] Message temporaire trouvé dans ${localFilePath}.`);
+            return true;
+        }
+        return false;
+    } catch (error) {
+        // Si le fichier n'existe pas, ou si lecture impossible, ce n'est pas un fichier temporaire (il est inexistant)
+        return false;
+    }
+}
+
+// --- FONCTION UTILITAIRE POUR OBTENIR LE CHEMIN LOCAL ---
+function getLocalFilePath(
+  targetLanguage,
+  imdbid,
+  season,
+  episode,
+  provider
+) {
+    // Cela doit correspondre au chemin que le serveur statique utilise
+    // Par exemple, si serveHTTP a `static: "/subtitles"`, le chemin sur le disque est `subtitles/...`
+    const filename = `${imdbid}-translated-${episode}-1.srt`;
+    return `subtitles/${provider}/${targetLanguage}/${imdbid}/season${season}/${filename}`;
+}
+// ---------------------------------------------------------
+
+
 const builder = new addonBuilder({
   id: "org.autotranslate.geanpn",
   version: "1.0.6", // Incrémentation de la version
   name: "Auto Subtitle Translate by geanpn",
   logo: "./subtitles/logo.webp",
+  resources: ["subtitles"], // Ajout pour garantir le Manifeste
+  types: ["series", "movie"], // Ajout pour garantir le Manifeste
   configurable: true,
   behaviorHints: {
     configurable: true,
@@ -54,11 +102,11 @@ const builder = new addonBuilder({
       ],
     },
     {
-      key: "tmdb_apikey", 
+      key: "tmdb_apikey",
       // MISE À JOUR: Lien hypertexte intégré directement dans le titre
       title: 'TMDb API Key (Requis pour Gestdown Series) <a href="https://www.themoviedb.org/settings/api" target="_blank" style="color: #63b3ed; text-decoration: underline;">API</a>',
       type: "text",
-      required: true, 
+      required: true,
       // Suppression de addon_config_link
     },
     {
@@ -98,7 +146,6 @@ const builder = new addonBuilder({
   ],
   description:
     "This addon takes subtitles from OpenSubtitlesV3, Wyzie, or Gestdown then translates into desired language using Google Translate, or ChatGPT (OpenAI Compatible Providers). Requires a TMDb API Key for reliable series subtitle retrieval via Gestdown. For donations:in progress Bug report: geanpn@gmail.com",
-  types: ["series", "movie"],
   catalogs: [],
   resources: ["subtitles"],
 });
@@ -106,7 +153,7 @@ const builder = new addonBuilder({
 builder.defineSubtitlesHandler(async function (args) {
   console.log("Subtitle request received:", args);
   // Récupération de la clé TMDb de la configuration via destructuring
-  const { id, config: { tmdb_apikey, ...config }, stream } = args; 
+  const { id, config: { tmdb_apikey, ...config }, stream } = args;
 
   const targetLanguage = languages.getKeyFromValue(
     config.translateto,
@@ -137,16 +184,50 @@ builder.defineSubtitlesHandler(async function (args) {
   }
 
   const { type, season = null, episode = null } = parseId(id);
+  
+  // --- NOUVELLE LOGIQUE DE VÉRIFICATION DU FICHIER TEMPORAIRE ---
+  const localFilePath = getLocalFilePath(
+    targetLanguage,
+    imdbid,
+    season,
+    episode,
+    config.provider
+  );
+  
+  let shouldRerunTranslation = false;
+
+  if (await isTemporaryMessageFile(localFilePath)) {
+      console.log("[Rerun] Fichier temporaire détecté. Suppression et relance de la traduction.");
+      shouldRerunTranslation = true;
+      
+      // Tenter de supprimer le fichier temporaire
+      try {
+          await fs.unlink(localFilePath);
+          console.log(`[Rerun] Fichier temporaire supprimé: ${localFilePath}`);
+      } catch (e) {
+          console.warn(`[Rerun] Impossible de supprimer le fichier temporaire: ${localFilePath}`, e.message);
+      }
+      
+      // On peut aussi supprimer l'entrée dans la base de données
+      // Assurez-vous d'avoir une fonction `connection.deleteSubtitle` si vous voulez faire cela
+      // try { await connection.deleteSubtitle(imdbid, season, episode, targetLanguage); } catch (e) { /* ignore */ }
+  }
+  // -------------------------------------------------------------
+
 
   try {
-    // 1. Check if already exists in database
-    const existingSubtitle = await connection.getsubtitles(
-      imdbid,
-      season,
-      episode,
-      targetLanguage
-    );
-
+    // 1. Check if already exists in database (skip if we decided to rerun the translation)
+    let existingSubtitle = [];
+    if (!shouldRerunTranslation) {
+        existingSubtitle = await connection.getsubtitles(
+            imdbid,
+            season,
+            episode,
+            targetLanguage
+        );
+    }
+    
+    // Si le sous-titre existe dans la DB et n'est PAS un fichier temporaire (ou si on n'a pas relancé la trad)
     if (existingSubtitle.length > 0) {
       console.log(
         "Subtitle found in database:",
@@ -183,10 +264,11 @@ builder.defineSubtitlesHandler(async function (args) {
       season,
       episode,
       targetLanguage,
-      tmdb_apikey 
+      tmdb_apikey
     );
 
     if (!subs || subs.length === 0) {
+      // Si aucun sous-titre source n'est trouvé, on crée le message d'erreur
       await createOrUpdateMessageSub(
         "No subtitles found on OpenSubtitles or other sources",
         imdbid,
@@ -195,6 +277,7 @@ builder.defineSubtitlesHandler(async function (args) {
         targetLanguage,
         config.provider
       );
+      // et on retourne l'URL du fichier d'erreur/d'attente pour que l'utilisateur le voie
       return Promise.resolve({
         subtitles: [
           {
@@ -243,6 +326,7 @@ builder.defineSubtitlesHandler(async function (args) {
       "Subtitles found on source, but not in target language. Translating..."
     );
 
+    // Si on arrive ici, on crée le message d'attente AVANT de lancer la file d'attente
     await createOrUpdateMessageSub(
       "Translating subtitles. Please wait 1 minute and try again.",
       imdbid,
