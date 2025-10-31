@@ -73,7 +73,7 @@ const builder = new addonBuilder({
   id: "org.autotranslate.geanpn",
   version: "1.0.6", // Incrémentation de la version
   name: "Translate by k8v",
-  logo: "./subtitles/logo.webp",
+  logo: "./subtitles/Logo.png",
   resources: ["subtitles"], // Ajout pour garantir le Manifeste
   types: ["series", "movie"], // Ajout pour garantir le Manifeste
   configurable: true,
