@@ -72,7 +72,7 @@ function getLocalFilePath(
 const builder = new addonBuilder({
   id: "org.autotranslate.geanpn",
   version: "1.0.6", // Incrémentation de la version
-  name: "Auto Subtitle Translate by geanpn",
+  name: "Translate by k8v",
   logo: "./subtitles/logo.webp",
   resources: ["subtitles"], // Ajout pour garantir le Manifeste
   types: ["series", "movie"], // Ajout pour garantir le Manifeste
@@ -104,7 +104,7 @@ const builder = new addonBuilder({
     {
       key: "tmdb_apikey",
       // MISE À JOUR: Lien hypertexte intégré directement dans le titre
-      title: 'TMDb API Key (Requis pour Gestdown Series) <a href="https://www.themoviedb.org/settings/api" target="_blank" style="color: #63b3ed; text-decoration: underline;">API</a>',
+      title: 'TMDb API Key (Required for Gestdown Series) <a href="https://www.themoviedb.org/settings/api" target="_blank" style="color: #63b3ed; text-decoration: underline;">API</a>',
       type: "text",
       required: true,
       // Suppression de addon_config_link
@@ -145,7 +145,7 @@ const builder = new addonBuilder({
     },
   ],
   description:
-    "This addon takes subtitles from OpenSubtitlesV3, Wyzie, or Gestdown then translates into desired language using Google Translate, or ChatGPT (OpenAI Compatible Providers). Requires a TMDb API Key for reliable series subtitle retrieval via Gestdown. For donations:in progress Bug report: geanpn@gmail.com",
+    "This addon takes subtitles from OpenSubtitlesV3, Wyzie, or Gestdown then translates into desired language using Google Translate, or ChatGPT (OpenAI Compatible Providers). Requires a TMDb API Key for reliable series subtitle retrieval via Gestdown.",
   catalogs: [],
   resources: ["subtitles"],
 });
