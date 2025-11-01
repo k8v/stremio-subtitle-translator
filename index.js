@@ -73,8 +73,8 @@ const builder = new addonBuilder({
   id: "org.autotranslate.geanpn",
   version: "1.0.6", // Incrémentation de la version
   name: "Translate by k8v",
-  logo: "./subtitles/Logo.png",
-  background: './subtitles/background.jpg',
+  logo: "https://upload.wikimedia.org/wikipedia/commons/5/55/Logo_Apple_Translate.png",
+  background: 'https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/7d185393-7bf0-465b-b68b-fccf3240c210/db4cwf6-29139320-de9d-4777-bc48-58f59cc81b5e.jpg/v1/fill/w_1192,h_670,q_70,strp/back_to_the_future_4___the_journey_by_tohad_db4cwf6-pre.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTA4MCIsInBhdGgiOiIvZi83ZDE4NTM5My03YmYwLTQ2NWItYjY4Yi1mY2NmMzI0MGMyMTAvZGI0Y3dmNi0yOTEzOTMyMC1kZTlkLTQ3NzctYmM0OC01OGY1OWNjODFiNWUuanBnIiwid2lkdGgiOiI8PTE5MjAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.g1I-3xEi4ap_MPGQa-YVKArKqoAA9tjkDGAjtdftaAM',
   resources: ["subtitles"], // Ajout pour garantir le Manifeste
   types: ["series", "movie"], // Ajout pour garantir le Manifeste
   configurable: true,
