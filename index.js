@@ -74,6 +74,7 @@ const builder = new addonBuilder({
   version: "1.0.6", // Incrémentation de la version
   name: "Translate by k8v",
   logo: "./subtitles/Logo.png",
+  background: './subtitles/background.jpg',
   resources: ["subtitles"], // Ajout pour garantir le Manifeste
   types: ["series", "movie"], // Ajout pour garantir le Manifeste
   configurable: true,
