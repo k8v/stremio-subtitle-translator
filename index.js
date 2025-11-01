@@ -91,24 +91,25 @@ const builder = new addonBuilder({
       options: ["Google Translate", "ChatGPT API"],
     },
     {
-      key: "apikey",
-      title: "ChatGPT API Key",
-      type: "text",
-      required: false,
-      dependencies: [
-        {
-          key: "provider",
-          value: ["ChatGPT API"],
-        },
-      ],
-    },
-    {
       key: "tmdb_apikey",
       // MISE À JOUR: Lien hypertexte intégré directement dans le titre
       title: 'TMDb API Key (Required for Gestdown Series) <a href="https://www.themoviedb.org/settings/api" target="_blank" style="color: #63b3ed; text-decoration: underline;">API</a>',
       type: "text",
       required: true,
       // Suppression de addon_config_link
+    },
+    {
+      key: "apikey",
+      title: "ChatGPT API Key",
+      type: "text",
+      required: false,
+      dependencies: 
+      [
+        {
+          key: "provider",
+          value: ["ChatGPT API"],
+        },
+      ],
     },
     {
       key: "base_url",
