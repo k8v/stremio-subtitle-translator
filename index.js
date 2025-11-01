@@ -10,7 +10,7 @@ const { createOrUpdateMessageSub } = require("./subtitles");
 const translationQueue = require("./queues/translationQueue");
 const baseLanguages = require("./langs/base.lang.json");
 const isoCodeMapping = require("./langs/iso_code_mapping.json");
-const fs = require("fs").promises; // Ajout de fs pour la manipulation de fichiers
+const fs = require("fs").promises;
 
 require("dotenv").config();
 
@@ -71,12 +71,12 @@ function getLocalFilePath(
 
 const builder = new addonBuilder({
   id: "org.autotranslate.geanpn",
-  version: "1.0.6", // Incrémentation de la version
+  version: "1.0.7",
   name: "Translate by k8v",
-  logo: "https://upload.wikimedia.org/wikipedia/commons/5/55/Logo_Apple_Translate.png",
-  background: 'https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/7d185393-7bf0-465b-b68b-fccf3240c210/db4cwf6-29139320-de9d-4777-bc48-58f59cc81b5e.jpg/v1/fill/w_1192,h_670,q_70,strp/back_to_the_future_4___the_journey_by_tohad_db4cwf6-pre.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTA4MCIsInBhdGgiOiIvZi83ZDE4NTM5My03YmYwLTQ2NWItYjY4Yi1mY2NmMzI0MGMyMTAvZGI0Y3dmNi0yOTEzOTMyMC1kZTlkLTQ3NzctYmM0OC01OGY1OWNjODFiNWUuanBnIiwid2lkdGgiOiI8PTE5MjAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.g1I-3xEi4ap_MPGQa-YVKArKqoAA9tjkDGAjtdftaAM',
-  resources: ["subtitles"], // Ajout pour garantir le Manifeste
-  types: ["series", "movie"], // Ajout pour garantir le Manifeste
+  logo: "https://i.postimg.cc/0y8d3jm0/traduire.png",
+  background: 'https://i.postimg.cc/Qdy9bdqB/STRANGER-THINGS-2.jpg',
+  resources: ["subtitles"],
+  types: ["series", "movie"],
   configurable: true,
   behaviorHints: {
     configurable: true,
@@ -88,7 +88,7 @@ const builder = new addonBuilder({
       title: "Provider",
       type: "select",
       required: true,
-      options: ["Google Translate", "ChatGPT API"],
+      options: ["Google Translate", "ChatGPT API", "Google Gemini", "OpenRouter", "Groq", "Together AI", "Custom"],
     },
     {
       key: "tmdb_apikey",
@@ -96,44 +96,59 @@ const builder = new addonBuilder({
       title: 'TMDb API Key (Required for Gestdown Series) <a href="https://www.themoviedb.org/settings/api" target="_blank" style="color: #63b3ed; text-decoration: underline;">API</a>',
       type: "text",
       required: true,
-      // Suppression de addon_config_link
     },
     {
       key: "apikey",
-      title: "ChatGPT API Key",
+      title: "API Key (For AI Providers)",
       type: "text",
       required: false,
       dependencies: 
       [
         {
           key: "provider",
-          value: ["ChatGPT API"],
+          value: ["ChatGPT API", "Google Gemini", "OpenRouter", "Groq", "Together AI", "Custom"],
         },
       ],
     },
     {
       key: "base_url",
-      title: "ChatGPT API Base URL",
+      title: `
+        API Base URL (Endpoint)
+        <br>
+        <span style="font-size: 0.8em; display: block; margin-top: 5px;">
+            URL de base de l'API de votre fournisseur:
+            <br>
+            <strong>ChatGPT API:</strong> https://api.openai.com/v1/responses
+            <br>
+            <strong>Google Gemini:</strong> https://generativelanguage.googleapis.com/v1beta/openai/
+            <br>
+            <strong>OpenRouter:</strong> https://openrouter.ai/api/v1/chat/completions
+            <br>
+            <strong>Groq:</strong> https://api.groq.com/openai/v1
+            <br>
+            <strong>Together AI:</strong> https://api.together.xyz/v1
+        </span>
+      `,
       type: "text",
       required: false,
-      default: "https://api.openai.com/v1/responses",
+      default: "https://api.openai.com/v1/responses", 
       dependencies: [
         {
           key: "provider",
-          value: ["ChatGPT API"],
+          value: ["ChatGPT API", "Google Gemini", "OpenRouter", "Groq", "Together AI", "Custom"],
         },
       ],
     },
     {
       key: "model_name",
-      title: "ChatGPT API Model Name",
+      title: "Model Name (For AI Providers)",
       type: "text",
       required: false,
       default: "gpt-4o-mini",
       dependencies: [
         {
           key: "provider",
-          value: ["ChatGPT API"],
+          value: ["ChatGPT API", "Google Gemini", "OpenRouter", "Groq", "Together AI", "Custom"],
         },
       ],
     },
