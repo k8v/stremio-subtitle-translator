@@ -1,6 +1,7 @@
 const googleTranslate = require("google-translate-api-browser");
 const fs = require("fs").promises;
 const OpenAI = require("openai");
+require("dotenv").config();
 
 var count = 0;
 async function translateTextWithRetry(
@@ -22,7 +23,7 @@ async function translateTextWithRetry(
         const textToTranslate = texts.join(" ||| ");
         result = await googleTranslate.translate(textToTranslate, {
           to: targetLanguage,
-          corsUrl: "http://cors-anywhere.herokuapp.com/",
+          corsUrl: process.env.CORS_URL || "http://cors-anywhere.herokuapp.com/",
         });
         resultArray = result.text.split("|||");
         if (texts.length !== resultArray.length && resultArray.length > 0) {
@@ -39,6 +40,12 @@ async function translateTextWithRetry(
         }
         break;
       }
+      case "OpenAI":
+      case "Google Gemini":
+      case "OpenRouter":
+      case "Groq":
+      case "Together AI":
+      case "Custom":
       case "ChatGPT API": {
         const openai = new OpenAI({
           apiKey: apikey,
@@ -70,7 +77,7 @@ async function translateTextWithRetry(
         break;
       }
       default:
-        throw new Error("Provider not found");
+        throw new Error(`Provider not supported: ${provider}`);
     }
 
     if (texts.length != resultArray.length) {
